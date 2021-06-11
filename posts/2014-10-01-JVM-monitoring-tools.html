@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - JVM monitoring tools</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                let myName = 'pavel',
+                    domain = '&#101toconsult&#105&#110&#103&#46&#115k',
+                    elements = document.querySelectorAll('[href=""]'),
+                    adr = myName + '&#64&#108' + domain,
+                    m = 'mail';
+
+                if (elements[0]) {
+                    elements[0].innerHTML = adr;
+                    elements[0].href = m + 'to' + ':' + adr;
+                }
+            }, false);
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>JVM monitoring tools</h1>
+        <div class="meta">[2014-10-01] </div>
+        <p>A list of useful JVM monitoring tools</p>
+    </section>
+    <section>
+        <p>I’ve gathered a list of basic tools for troubleshooting Java applications. There are many other tools out there, but these are the ones I used and find useful.</p>
+<h2 id="jvm-tools">JVM tools</h2>
+<p><code>jps</code> - print java processes PID and parameters on a target JVM</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode zsh"><code class="sourceCode zsh"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>➜ jps -lmv</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>29379 sample.App -testParam1</span></code></pre></div>
+<p><code>jinfo $PID</code> - prints details about the java process (VM parameters and flags, java system properties)</p>
+<p><code>jstack $PID</code> - prints stacktrace of all threads in the process with PID</p>
+<p><code>jstat</code> - print various garbage collection statistics (or jstatd daemon for remote monitoring)</p>
+<p><code>jmap</code> - print heap statistics on a runnning process</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode zsh"><code class="sourceCode zsh"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>➜ jmap -histo:all 29379</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>No dump <span class="kw">file</span> specified</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>WARNING: Ran out of C-heap; undercounted 368 total instances <span class="kw">in</span> data below</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>num     #instances         #bytes  class name <span class="kw">(</span>module<span class="kw">)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>-------------------------------------------------------</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>1:          1049        2739072  [I <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>2:         12206         668472  [B <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>3:         10700         256800  java.lang.String <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>4:          1326         164112  java.lang.Class <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>5:          1611         112296  [Ljava.lang.Object; <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>6:          3147         100704  java.util.HashMap<span class="ot">$Node</span> <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>7:            41          67888  [C <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>8:           393          61648  [Ljava.util.HashMap<span class="ot">$Node</span>; <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>9:          1098          35136  java.util.concurrent.ConcurrentHashMap<span class="ot">$Node</span> <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>10:           608          24320  java.util.LinkedHashMap<span class="ot">$Entry</span> <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>11:           416          21616  [Ljava.lang.String; <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a>12:            47          17968  [Ljava.util.concurrent.ConcurrentHashMap<span class="ot">$Node</span>; <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a>13:           354          16992  java.util.HashMap <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>14:           361           8664  java.lang.module.ModuleDescriptor<span class="ot">$Exports</span> <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>15:           347           8328  java.lang.StringBuilder <span class="kw">(</span>java.base@14.0.1<span class="kw">)</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a>.....................</span></code></pre></div>
+<p><code>jhat</code> - tool for analyzing java heap files</p>
+<h2 id="linux-tools-for-troubleshooting">Linux tools for troubleshooting</h2>
+<p><code>iostat</code> - CPU and device I/O statistics (e.g. devices that are busy <code>iostat -zh 2 4</code>)</p>
+<p><code>iotop</code> - disk I/O utilization</p>
+<p><code>sar</code> - statistics on CPU, memory, swap, context switching, disk and network</p>
+<p><code>vmstat</code>- statistics on virtual memory</p>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - Introduction to HaXml</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                let myName = 'pavel',
+                    domain = '&#101toconsult&#105&#110&#103&#46&#115k',
+                    elements = document.querySelectorAll('[href=""]'),
+                    adr = myName + '&#64&#108' + domain,
+                    m = 'mail';
+
+                if (elements[0]) {
+                    elements[0].innerHTML = adr;
+                    elements[0].href = m + 'to' + ':' + adr;
+                }
+            }, false);
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>Introduction to HaXml</h1>
+        <div class="meta">[2015-08-06] </div>
+        <p>A quick introduction into the HaXml library, reading data from XML and representing them as Haskell types</p>
+    </section>
+    <section>
+        <p>I was looking for a HaXml tutorial or code examples on the web but I could not find any description of the basic idea behind the library. There are a few tutorials out there, but their focus is more on the power of combinators than on the library basics. There is also a code fragment in the book real-world haskell but (at the time of writing this post) it is outdated.</p>
+<p>The aim of this tutorial is to describe the basic HaXml functionality - reading XML data from a file into custom types and saving the data from these types back to another file.</p>
+<p>What we want to achieve is:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    students <span class="ot">&lt;-</span> fReadXml <span class="st">&quot;sample-in.xml&quot;</span><span class="ot"> ::</span> <span class="dt">IO</span> <span class="dt">Students</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="fu">print</span> students</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>    fWriteXml <span class="st">&quot;sample-out.xml&quot;</span> students</span></code></pre></div>
+<p>The sample-in.xml looks like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode xml"><code class="sourceCode xml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">&lt;?xml</span> version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;<span class="kw">?&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">&lt;Students&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a> <span class="kw">&lt;Student</span><span class="ot"> gender=</span><span class="st">&quot;M&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  <span class="kw">&lt;name&gt;</span>Zachary Popme<span class="kw">&lt;/name&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>  <span class="kw">&lt;Address&gt;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>   <span class="kw">&lt;street&gt;</span>roma<span class="kw">&lt;/street&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>   <span class="kw">&lt;number&gt;</span>10<span class="kw">&lt;/number&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>  <span class="kw">&lt;/Address&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a> <span class="kw">&lt;/Student&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a> <span class="kw">&lt;Student</span><span class="ot"> gender=</span><span class="st">&quot;F&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>  <span class="kw">&lt;name&gt;</span>Daria Marchenko<span class="kw">&lt;/name&gt;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>  <span class="kw">&lt;Address&gt;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>   <span class="kw">&lt;street&gt;</span>uptown<span class="kw">&lt;/street&gt;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>   <span class="kw">&lt;number&gt;</span>4<span class="kw">&lt;/number&gt;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>  <span class="kw">&lt;/Address&gt;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a> <span class="kw">&lt;/Student&gt;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a><span class="kw">&lt;/Students&gt;</span></span></code></pre></div>
+<p>First we need to install the library with:</p>
+<pre class="shell"><code>cabal update
+cabal install haxml</code></pre>
+<p>We could also work with the XML data directly and not map it to any types. This can be achieved with the <code>ANYContent</code> type. We could read everything from the XML like this:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>    c <span class="ot">&lt;-</span> fReadXml <span class="st">&quot;sample-in.xml&quot;</span><span class="ot"> ::</span> <span class="dt">IO</span> <span class="dt">ANYContent</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>    <span class="fu">print</span> c</span></code></pre></div>
+<p>Nonetheless, our goal is to map the XML to custom data-types. These types will have 1 to 1 correspondence with the XML data, although this is of course not necessary.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Students</span> <span class="ot">=</span> <span class="dt">Students</span> {<span class="ot">enrolled ::</span> [<span class="dt">Student</span>]} <span class="kw">deriving</span> <span class="dt">Show</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Student</span> <span class="ot">=</span> <span class="dt">Student</span> {<span class="ot">name ::</span> <span class="dt">String</span>,<span class="ot"> gender ::</span> <span class="dt">String</span>,<span class="ot"> address ::</span> <span class="dt">Address</span>} <span class="kw">deriving</span> <span class="dt">Show</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Address</span> <span class="ot">=</span> <span class="dt">Address</span> {<span class="ot">street ::</span> <span class="dt">String</span>,<span class="ot"> number ::</span> <span class="dt">Int</span>} <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
+<p>HaXml reads the contents (elements, attributes, comments, declarations etc.) of any XML and wraps it into HaXml data-types. For illustration purposes we can have a look at the <code>Address</code> element:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="dt">CElem</span> (<span class="dt">Elem</span> (<span class="dt">N</span> <span class="st">&quot;Address&quot;</span>) []</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>  [</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    <span class="dt">CString</span> <span class="dt">False</span> <span class="st">&quot;\n\t\t\t&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>    <span class="dt">CElem</span> (<span class="dt">Elem</span> (<span class="dt">N</span> <span class="st">&quot;street&quot;</span>) [] [<span class="dt">CString</span> <span class="dt">False</span> <span class="st">&quot;uptown&quot;</span>]),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>    <span class="dt">CString</span> <span class="dt">False</span> <span class="st">&quot;\n\t\t\t&quot;</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>    <span class="dt">CElem</span> (<span class="dt">Elem</span> (<span class="dt">N</span> <span class="st">&quot;number&quot;</span>) [] [<span class="dt">CString</span> <span class="dt">False</span> <span class="st">&quot;4&quot;</span>]),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>    <span class="dt">CString</span> <span class="dt">False</span> <span class="st">&quot;\n\t\t&quot;</span> ]),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a>    <span class="dt">CString</span> <span class="dt">False</span> <span class="st">&quot;\n\t&quot;</span> ]),</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>    <span class="dt">CString</span> <span class="dt">False</span> <span class="st">&quot;\n&quot;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a>  ]</span></code></pre></div>
+<p>We need a way to extract the data from these HaXml types and store them in our types. We can do it by implementing two typeclasses <code>HTypeable</code> and <code>XmlContent</code>.</p>
+<p>Let’s describe these in turn.</p>
+<h3 id="htypeable">HTypeable</h3>
+<p>The class is quite simple:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="kw">class</span> <span class="dt">HTypeable</span> a <span class="kw">where</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a><span class="ot">toHType ::</span> a <span class="ot">-&gt;</span> <span class="dt">HType</span></span></code></pre></div>
+<p><code>HType</code> adds additional metadata to the type it augments. For example:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTypeable</span> <span class="dt">Integer</span> <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>toHType   _    <span class="ot">=</span> <span class="dt">Prim</span> <span class="st">&quot;Integer&quot;</span> <span class="st">&quot;integer&quot;</span></span></code></pre></div>
+<p>The <code>Prim</code> type holds the XML-element name for a given primitive (“integer” in case of the type <code>Integer</code>). HaXml takes advantage of metadata in <code>HTypes</code> when mapping from Haskell types to XML.</p>
+<p>We have defined three records - <code>Student</code>, <code>Students</code> and <code>Address</code>. For each record we have to define an instance of <code>HTypeable</code>. Let’s begin with <code>Address</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTypeable</span> <span class="dt">Address</span> <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>toHType (<span class="dt">Address</span> s n) <span class="ot">=</span> <span class="dt">Defined</span> <span class="st">&quot;Address&quot;</span> [] [<span class="dt">Constr</span> <span class="st">&quot;Address&quot;</span> [] [toHType s, toHType n]]</span></code></pre></div>
+<p>The arguments to the <code>Defined</code> data constructor are as follows:</p>
+<ul>
+<li>name of type,</li>
+<li>a list of <code>HTypes</code> of the type variables,</li>
+<li>a list of all data constructors for the type.</li>
+</ul>
+<p>The <code>Constr</code> has 3 arguments:</p>
+<ul>
+<li>name of the constructor (will be used as the XML tag-name),</li>
+<li>a list of <code>HTypes</code> of the type variables,</li>
+<li>list of all arguments to the data constructor (as <code>HTypes</code>).</li>
+</ul>
+<p>A more detailed description of <code>Constr</code> can be found in the <a href="https://hackage.haskell.org/package/HaXml-1.25.3/docs/src/Text-XML-HaXml-TypeMapping.html#Constr">code</a>.</p>
+<p>The other two instances are similar to the first one:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTypeable</span> <span class="dt">Students</span> <span class="kw">where</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>toHType (<span class="dt">Students</span> ss) <span class="ot">=</span> <span class="dt">Defined</span> <span class="st">&quot;Students&quot;</span> [] [<span class="dt">Constr</span> <span class="st">&quot;Students&quot;</span> [] [toHType ss]]</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTypeable</span> <span class="dt">Student</span> <span class="kw">where</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a>toHType s <span class="ot">=</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a>    <span class="kw">let</span> <span class="dt">Student</span> n g a <span class="ot">=</span> s <span class="kw">in</span> <span class="dt">Defined</span> <span class="st">&quot;Student&quot;</span> [] [<span class="dt">Constr</span> <span class="st">&quot;Student&quot;</span> [] [toHType n, toHType g, toHType a]]</span></code></pre></div>
+<h3 id="xmlcontent">XmlContent</h3>
+<p>Now we can start defining the <code>XmlContent</code> instances which have two functions - <code>parseContents</code> (from XML to types) and <code>toContents</code> (from types to XML).</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">XmlContent</span> <span class="dt">Address</span> <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a>    parseContents <span class="ot">=</span> inElement <span class="st">&quot;Address&quot;</span> (<span class="dt">Address</span> <span class="op">&lt;$&gt;</span> parseStreet <span class="op">&lt;*&gt;</span> parseNumber)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>      <span class="kw">where</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>        parseStreet <span class="ot">=</span> inElement <span class="st">&quot;street&quot;</span> text</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>        parseNumber <span class="ot">=</span> <span class="fu">read</span> <span class="op">&lt;$&gt;</span> inElement <span class="st">&quot;number&quot;</span> text</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a>    toContents a<span class="op">@</span>(<span class="dt">Address</span> s n) <span class="ot">=</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a>        [mkElemC (showConstr <span class="dv">0</span> <span class="op">$</span> toHType a) [mkElemC <span class="st">&quot;street&quot;</span> <span class="op">$</span> toText s, mkElemC <span class="st">&quot;number&quot;</span> <span class="op">$</span> toText <span class="op">.</span> <span class="fu">show</span> <span class="op">$</span> n]]</span></code></pre></div>
+<p>Let’s first look at <code>toContents</code>. Its implementation will be (almost) the same in all instances. <code>toContents</code> is called when a new <code>Address</code> XML-element should be created. We define the XML-element with <code>mkElemC</code>. The first argument is the tag-name (we can use the <code>showConstr</code> function which pulls the name from a <code>HType</code>). Afterwards we create two sub-elements - “street” and “number”.</p>
+<p><code>parseContents</code> traverses the HaXml types which wrap the XML data. It uses the HaXml functions to navigate through all the types like <code>CElem</code>, <code>Elem</code>, <code>CString</code> etc. (we saw those in the example above). The <code>inElement</code> function are basically two functions - <code>element</code> which moves to the next XML-element and <code>interior</code> which goes “into” the contents of that element. The <code>text</code> function extracts the text from the element. Since <code>XmlContent</code> is a functor (<code>inElement</code> returns <code>XMLParser a</code>) we can use the applicative operators as shown above.</p>
+<p>The <code>Students</code> instance is pretty much the same:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">XmlContent</span> <span class="dt">Students</span> <span class="kw">where</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a>    parseContents <span class="ot">=</span> inElement <span class="st">&quot;Students&quot;</span> (<span class="dt">Students</span> <span class="op">&lt;$&gt;</span> parseContents)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>    toContents v<span class="op">@</span>(<span class="dt">Students</span> ss) <span class="ot">=</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a>         [mkElemC (showConstr <span class="dv">0</span> <span class="op">$</span> toHType v) (toContents ss)]</span></code></pre></div>
+<p>For reading and writing attribute values I’ll define helper functions (if there is a better HaXml-way to do it let me know!). The first argument of <code>attrToText</code> is the name of the attribute, the second is a list of attributes which we go through in order to find an attribute with this name. If no attribute is found, the function returns <code>Nothing</code>.</p>
+<p><code>mkAttrElemC</code> creates a <code>CElem</code> with the appropriate attributes.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="ot">attrToText ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">Attributes</span>] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">String</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a>attrToText n as <span class="ot">=</span> <span class="fu">foldl1</span> (<span class="op">&lt;|&gt;</span>) attrText</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>    <span class="kw">where</span> attrText <span class="ot">=</span> <span class="fu">map</span> (fromAttrToStr n) as</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true"></a><span class="ot">mkAttrElemC ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">Attribute</span>] <span class="ot">-&gt;</span> [<span class="dt">Content</span> ()] <span class="ot">-&gt;</span> <span class="dt">Content</span> ()</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true"></a>mkAttrElemC x as cs <span class="ot">=</span> <span class="dt">CElem</span> (<span class="dt">Elem</span> (<span class="dt">N</span> x) as cs) ()</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">XmlContent</span> <span class="dt">Student</span> <span class="kw">where</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true"></a>    parseContents <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true"></a>      e <span class="ot">&lt;-</span> element [<span class="st">&quot;Student&quot;</span>]</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true"></a>      interior e (<span class="dt">Student</span> <span class="op">&lt;$&gt;</span> parseName <span class="op">&lt;*&gt;</span> parseGender e <span class="op">&lt;*&gt;</span> parseContents )</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true"></a>        <span class="kw">where</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true"></a>          parseName <span class="ot">=</span> inElement <span class="st">&quot;name&quot;</span> text</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true"></a>          parseGender e <span class="ot">=</span> <span class="fu">return</span> <span class="op">$</span> fromMaybe <span class="st">&quot;unknown&quot;</span> <span class="op">$</span> attrToText <span class="st">&quot;gender&quot;</span> <span class="op">$</span> attrs e</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true"></a>    toContents v<span class="op">@</span>(<span class="dt">Student</span> n g a) <span class="ot">=</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true"></a>        [mkAttrElemC (showConstr <span class="dv">0</span> <span class="op">$</span> toHType v) [mkAttr <span class="st">&quot;gender&quot;</span> g]  (mkElemC <span class="st">&quot;name&quot;</span> (toText n) <span class="op">:</span> toContents a)]</span></code></pre></div>
+<p>We read the name (<code>parseName</code>), afterwards we use the HaXml <code>Student</code> element <code>e</code> (it’s just an <code>Elem</code> type) for reading all of its attributes and return the value of “gender” attribute. The last function is <code>parseContents</code> which will trigger <code>parseContents</code> in the <code>Address XmlContent</code> instance.</p>
+<h2 id="generating-code-with-drift">Generating code with DrIFT</h2>
+<p>The last point to mention is that we can partially automate generating this boilerplate. This can be achieved with <a href="http://repetae.net/computer/haskell/DrIFT/">DrIFT</a>.</p>
+<p>Install with:</p>
+<pre class="shell"><code>cabal update
+cabal install drift</code></pre>
+<p>We prepare the template:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Students</span> <span class="ot">=</span> <span class="dt">Students</span> {<span class="ot">enrolled ::</span> [<span class="dt">Student</span>]} <span class="kw">deriving</span> <span class="dt">Show</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Student</span> <span class="ot">=</span> <span class="dt">Student</span> {<span class="ot">name ::</span> <span class="dt">String</span>,<span class="ot"> gender ::</span> <span class="dt">String</span>,<span class="ot"> address ::</span> <span class="dt">Address</span>} <span class="kw">deriving</span> <span class="dt">Show</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Address</span> <span class="ot">=</span> <span class="dt">Address</span> {<span class="ot">street ::</span> <span class="dt">String</span>,<span class="ot"> number ::</span> <span class="dt">Int</span>} <span class="kw">deriving</span> <span class="dt">Show</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true"></a><span class="co">{-!for Address derive : XmlContent!-}</span>       </span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true"></a><span class="co">{-!for Students derive : XmlContent!-}</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true"></a><span class="co">{-!for Student derive : XmlContent!-}</span></span></code></pre></div>
+<p>Now we can generate all the instances by calling:</p>
+<pre class="shell"><code>DrIFT xmlparser.hs</code></pre>
+<p>from the command line. It prints the generated source code to stdout. A full working example can be found here <a href="https://github.com/hotlib/haskell/blob/master/haxml/xmlparser.hs">xmlparser.hs</a></p>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>

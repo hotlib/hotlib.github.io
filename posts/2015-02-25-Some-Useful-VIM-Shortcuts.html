@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - Some Useful VIM Shortcuts</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                let myName = 'pavel',
+                    domain = '&#101toconsult&#105&#110&#103&#46&#115k',
+                    elements = document.querySelectorAll('[href=""]'),
+                    adr = myName + '&#64&#108' + domain,
+                    m = 'mail';
+
+                if (elements[0]) {
+                    elements[0].innerHTML = adr;
+                    elements[0].href = m + 'to' + ':' + adr;
+                }
+            }, false);
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>Some Useful VIM Shortcuts</h1>
+        <div class="meta">[2015-02-25] </div>
+        <p>A list of basic VIM commands to be productive</p>
+    </section>
+    <section>
+        <p>When I was learning VIM I was writing down commands and motions from different tutorials and tried to use them. I ended up using a sub-set of these which work for me. I am listing this sub-set which seems to be most useful.</p>
+<h2 id="editing-files">Editing files</h2>
+<p><code>:e filename</code> - edit file</p>
+<p><code>:w filename</code> - save file</p>
+<p><code>:q</code> - quit</p>
+<p><code>:qa!</code> - quit all (<code>!</code> means forced)</p>
+<p><code>:e!</code> - reload current file</p>
+<p><code>ZQ</code> - don’t save and quit</p>
+<p><code>ZZ</code> - save and quit</p>
+<h2 id="moving-around-the-document">Moving around the document</h2>
+<p><code>h</code> <code>j</code> <code>k</code> <code>l</code> - moving around the document</p>
+<p><code>CTRL-e</code> <code>CTRL-y</code> - moving document up or down without moving cursor</p>
+<p><code>H</code> <code>M</code> <code>L</code> - jumping to top, middle or bottom of current window</p>
+<p><code>gg</code> - beginning of file</p>
+<p><code>G</code> - end of file</p>
+<p><code>XXG</code> - move to line XX (XX is a number)</p>
+<p><code>`.</code> - jump to last changed line</p>
+<p><code>*</code> or <code>#</code> - searches next or previous word under cursor</p>
+<p><code>?</code> or <code>/</code> - searching backward or forward in document</p>
+<p><code>n</code> or <code>N</code> - next or previous word in search</p>
+<p><code>m</code> {a..z} - mark position with a letter in document</p>
+<p><code>`</code> {a..z} - jump to the position with letter</p>
+<p><code>'</code> {a..z} - jump to the position with letter but start at first non-blank character on the line</p>
+<h2 id="editing">Editing</h2>
+<p><code>i</code> or <code>I</code> and <code>a</code> or <code>A</code> - insert mode before or after cursor. Capital ‘I’ start of line, capital ‘A’ end of line</p>
+<p><code>o</code> - new line</p>
+<p><code>O</code> - new line above</p>
+<p><code>x</code> or <code>X</code> - delete character under or before cursor in normal mode</p>
+<p><code>XXx</code> - delete XX characters in normal mode</p>
+<p><code>y-&lt;motion&gt;</code> - yank <motion> text</p>
+<p><code>yy</code> - yank whole line</p>
+<p><code>p</code> - paste yanked text</p>
+<p><code>c-&lt;motion&gt;</code> - cut <motion> text</p>
+<p><code>d-&lt;motion&gt;</code> - delete <motion> text</p>
+<p><code>dX-&lt;motion&gt;</code> - delete X of <motion></p>
+<p><code>u</code> - undo last change</p>
+<p><code>CTRL-r</code> - redo last change (<code>u</code>ndo had to be executed before)</p>
+<p><code>:%s/old/new/gc</code> - substitute old for new, ‘c’ stand for confirmation</p>
+<p><code>"</code> {a..z} - access register (e.g. <code>"ay</code> - <code>y</code> ank to register <code>a</code>)</p>
+<p><code>CTRL-r</code> {a..z} - convenience to insert text from register {a..z} in normal mode</p>
+<p><code>:reg</code> - shows content of all registers</p>
+<h2 id="motions">Motions</h2>
+<p><code>^</code> - start of line (SHIFT-6 usually)</p>
+<p><code>$</code> - end of line (SHIFT-4 usually)</p>
+<p><code>w</code> or <code>e</code> - forward motion at start or end of a word</p>
+<p><code>b</code> - backward movement cursor at start of a word</p>
+<p><code>W</code> - to next word which starts after a blank space</p>
+<p><code>$</code> - till the end of line</p>
+<p><code>^</code> - till the start of line</p>
+<p><code>t-&lt;char&gt;</code> or <code>T-&lt;char&gt;</code> - forward or backward till the char (exclusive)</p>
+<p><code>f-&lt;char&gt;</code> or <code>F-&lt;char&gt;</code> - forward or backward till the char (inclusive)</p>
+<p><code>;</code> or <code>,</code> - repeat <code>f</code> or <code>t</code> forward or backward</p>
+<p><code>e</code> - end of next word</p>
+<p><code>a</code> - ‘around’ (e.g. <code>daw</code> - delete ‘around’ word)</p>
+<p><code>i</code> - inside (e.g. <code>ci"</code> - cut everything inside brackets ")</p>
+<p><code>D</code> - delete till the end of line</p>
+<p><code>C</code> - cut till end of line</p>
+<p><code>Y</code> - yank till end of line</p>
+<h2 id="working-with-multiple-files-advanced">Working with multiple files (advanced)</h2>
+<p><code>:vs filename</code> - vertical split open filename</p>
+<p><code>:sp filename</code> - horizontal split open filename</p>
+<p><code>CTRL-w w</code> - switch to next window</p>
+<p><code>CTRL-w s</code> - split window vertically</p>
+<p><code>CTRL-w v</code> - split windows horizontally</p>
+<p><code>CTRL-w Q</code> - close tab or split</p>
+<p><code>CTRL-w o</code> - close everything except the current window</p>
+<p><code>CTRL-w r</code> - swap window screen</p>
+<p><code>:vertical res</code> - resize splits to res</p>
+<p><code>:Te</code> or <code>:Texplore</code> - file explore in new tab</p>
+<p><code>:tabm X</code> - move current tab to X-th position</p>
+<p><code>:tabn</code> - go to next tab</p>
+<p><code>:tabp</code> - go to previous tab</p>
+<p><code>:tabe filename</code> - open file in tab</p>
+<p><code>:tabonly</code> - close other tabs</p>
+<p><code>gt</code> or <code>gT</code> - move forward or backward between tabs</p>
+<p><code>:bd</code> - close current tab and delete buffer</p>
+<h2 id="misc">Misc</h2>
+<p><code>.</code> - repeat last command</p>
+<p><code>v</code> or <code>V</code> - visual or visual line mode (in visual mode you can do commands lile <code>y</code>ank or <code>d</code>elete)</p>
+<p><code>CTRL-v</code> - visual block mode</p>
+<p><code>:Explore</code> - open file explore</p>
+<h3 id="multiline-edit-in-visual-block-mode">Multiline edit in visual block mode</h3>
+<ol type="1">
+<li><code>CTRL-v</code></li>
+<li><code>jj</code>..<code>j</code> all the lines you want</li>
+<li>do some command or motion, for example:
+<ul>
+<li><code>I</code> - insert text in front of cursor</li>
+<li><code>A</code> - insert text after cursor<br />
+</li>
+<li><code>d</code> - delete</li>
+<li><code>r</code> - replace character in selection</li>
+<li><code>c</code> - delete and switch to insert mode</li>
+<li><code>$</code> or <code>^</code> - move to beginning or end of all selected lines</li>
+</ul></li>
+<li><code>esc</code> enter normal mode</li>
+</ol>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>

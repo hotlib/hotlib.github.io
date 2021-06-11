@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - A PostgreSQL connection pool in Haskell</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                let myName = 'pavel',
+                    domain = '&#101toconsult&#105&#110&#103&#46&#115k',
+                    elements = document.querySelectorAll('[href=""]'),
+                    adr = myName + '&#64&#108' + domain,
+                    m = 'mail';
+
+                if (elements[0]) {
+                    elements[0].innerHTML = adr;
+                    elements[0].href = m + 'to' + ':' + adr;
+                }
+            }, false);
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>A PostgreSQL connection pool in Haskell</h1>
+        <div class="meta">[2015-01-30] </div>
+        <p>How to make a simple connection pool for PostgreSQL in Haskell</p>
+    </section>
+    <section>
+        <p>In order to create a connection pool we need two things:</p>
+<ol type="1">
+<li>a library which creates connections to PostgreSQL,</li>
+<li>a connection manager which maintains the connections.</li>
+</ol>
+<p>For 1. we will use the <code>postgresql-simple</code> library and for 2. we will take advantage of the <code>resource-pool</code>. For our test purposes we can create a small table with some data:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> films (</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">id</span>       <span class="dt">integer</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>title    <span class="dt">varchar</span>(<span class="dv">20</span>) <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>);</span></code></pre></div>
+<p>And some data:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> films <span class="kw">VALUES</span> (<span class="dv">1</span>, <span class="st">'Star Trek'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> films <span class="kw">VALUES</span> (<span class="dv">2</span>, <span class="st">'Star Wars'</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> films <span class="kw">VALUES</span> (<span class="dv">3</span>, <span class="st">'Stardust'</span>)</span></code></pre></div>
+<p>First we need to define properties which will be used by our PostgreSQL connections. In my case I have the user “testuser” with password “testuser” and database “testdb”.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>connectionInfo <span class="ot">∷</span> <span class="dt">ConnectInfo</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>connectionInfo <span class="ot">=</span> defaultConnectInfo {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>connectHost <span class="ot">=</span> <span class="st">&quot;localhost&quot;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>, connectPort <span class="ot">=</span> <span class="dv">5432</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>, connectUser <span class="ot">=</span> <span class="st">&quot;testuser&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>, connectPassword <span class="ot">=</span> <span class="st">&quot;testuser&quot;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>, connectDatabase <span class="ot">=</span> <span class="st">&quot;testdb&quot;</span> }</span></code></pre></div>
+<p>And this is all we need to create a connection pool with <code>createPool</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>myPool <span class="ot">∷</span> <span class="dt">IO</span> (<span class="dt">Pool</span> <span class="dt">Connection</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>myPool <span class="ot">=</span> createPool (connect connectionInfo) close <span class="dv">1</span> <span class="dv">10</span> <span class="dv">10</span></span></code></pre></div>
+<p>The first argument is a function which creates new connections. The second argument is a function which closes the connections. The rest of the arguments are as follows:</p>
+<ul>
+<li>subpools - the pool can have several independent pools, in our case it’s 1,</li>
+<li>the maximum idle time of a connection (in seconds) before it is closed (in our case it’s 10),</li>
+<li>the maximum amount of connections in the pool (in our case max. 10 connections).</li>
+</ul>
+<p>That’s it, we are done. We can test the connection pool with the following functions:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>printMovies <span class="ot">∷</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>printMovies conn <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    x <span class="ot">&lt;-</span> query_ conn <span class="st">&quot;select title from public.films&quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    <span class="kw">let</span> films <span class="ot">=</span> <span class="fu">map</span> fromOnly (x <span class="ot">∷</span> [<span class="dt">Only</span> <span class="dt">String</span>])</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    <span class="fu">print</span> films</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a>listMovies <span class="ot">∷</span> <span class="dt">Pool</span> <span class="dt">Connection</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a>listMovies pool <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a>    withResource pool printMovies</span></code></pre></div>
+<p>We can define a simple function which prints the current number of connections in PostgreSQL:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>connectionCount <span class="ot">∷</span> <span class="dt">IO</span> ()</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>connectionCount <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>    conn <span class="ot">&lt;-</span> connect connectionInfo</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a>    x <span class="ot">&lt;-</span> query_ conn <span class="st">&quot;SELECT COUNT (*) FROM pg_stat_activity&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a>    <span class="kw">let</span> c <span class="ot">=</span> fromOnly ∘ <span class="fu">head</span> <span class="op">$</span> (x <span class="ot">∷</span> [<span class="dt">Only</span> <span class="dt">Integer</span>])</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a>    close conn</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>   <span class="fu">print</span> c</span></code></pre></div>
+<p>We can run these functions in multiple threads to check that the connection pool works:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>main <span class="ot">∷</span> <span class="dt">IO</span> ()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>    pool <span class="ot">&lt;-</span> myPool</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>    <span class="kw">let</span> x <span class="ot">=</span> forkIO <span class="op">$</span> listMovies pool</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>    forM [1<span class="ot">‥</span><span class="dv">100</span>] <span class="op">$</span> <span class="fu">const</span> x</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>    wait <span class="dv">5</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>    connectionCount</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a>    wait <span class="dv">10</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a>    connectionCount</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a>    destroyAllResources pool</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a>  <span class="kw">where</span> wait s <span class="ot">=</span> threadDelay (<span class="dv">10</span><span class="op">^</span><span class="dv">6</span> <span class="op">*</span> s)</span></code></pre></div>
+<p>We get the following output:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="st">&quot;11&quot;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="st">&quot;1&quot;</span></span></code></pre></div>
+<p>Note: We have 10 active connections + the connection in connectionCount through which we queried the connections on PostgreSQL. After 10 seconds have elapsed we only have 1 open connection (the <code>connectionCount</code>’s connection).</p>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>

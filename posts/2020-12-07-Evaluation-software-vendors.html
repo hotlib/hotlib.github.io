@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - Evaluating software vendors</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                let myName = 'pavel',
+                    domain = '&#101toconsult&#105&#110&#103&#46&#115k',
+                    elements = document.querySelectorAll('[href=""]'),
+                    adr = myName + '&#64&#108' + domain,
+                    m = 'mail';
+
+                if (elements[0]) {
+                    elements[0].innerHTML = adr;
+                    elements[0].href = m + 'to' + ':' + adr;
+                }
+            }, false);
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>Evaluating software vendors</h1>
+        <div class="meta">[2020-12-07] </div>
+        <p>Short story written during COVID lockdown on picking the right software vendor for software development</p>
+    </section>
+    <section>
+        <p>You are a mid-executive in BigCorp. As it happens the sales department needs a new CRM. You are tasked to procure its implementation from an external software vendor.</p>
+<p>After some searching you find (hot) IT companies in your area. Based on the number of testimonials you narrow it to 3 candidates. Contact with the reps is quickly established and after a few meetings where you reiterate the CRM doesn’t need blockchain you get 3 similar proposals. How to pick the best vendor? How to ensure project success?</p>
+<p>The easiest way would be to pick at random. What are the odds of the project going sideways anyway? You search for reports on software project failure rate - if the rate is very low, you just arbitrarily choose one vendor and be done with it.</p>
+<div class="note">
+<div class="title">
+<p>Note</p>
+</div>
+<p>Unfortunately there are no reports on the probability of software project failure. Most reports floating around (from Standish Group, KPMG, Gartner etc.) have published some statistics on the project failure/success rate but it’s not clear how to interpret the results. There is almost no information on the research methods, project evaluation criteria or rules for project categorization.</p>
+<p>Even if the reports would be conducted in a rigorous manner it’s not clear the results have any validity. If the sample sizes are small or skewed in some direction (like sampling from client companies only) then the results can’t be generalized.</p>
+</div>
+<p>You go through one report after another, but there is just consultancy snake-oil. How can anyone quote these reports in academic papers?</p>
+<p>It feels like a dead end, but since there are a few more hours to kill you scroll through the reports just to look busy.</p>
+<p>When looking at one particular report you notice a chart with a shape similar to a chart you have seen in a previous report. You open another report and there it is again. There seems to be a pattern!</p>
+<p>The probability of project failure and project size always increases in tandem. Interesting! And whatever the project failure probability is, it always grows faster than the project size. You think this is true for all software projects.</p>
+<p>How does this apply to your case? The vendor needs to have a successfully completed project that is similar in size to the proposed CRM project!</p>
+<div class="note">
+<div class="title">
+<p>Note</p>
+</div>
+<p>Larger projects must put more effort into the design, requirements and testing phases (Software Engineering Economics, Barry W. Boehm).</p>
+<p>In larger projects the overall productivity decreases while the defect rate increases (Measures for Excellence: Reliable Software On Time, Within Budget, Lawrence H. Putnam). Defects in requirements and design are the most costly (The Economics of Software Quality, Capers Jones), because they are often discovered late.</p>
+<p>If a particular vendor is fine-tuned to smaller projects he might not have the capability to take up a (substantially) larger projects. Architecture, requirements management and integration testing could become bottlenecks.</p>
+<p>Without prior organizational experience the vendor could be caught off-guard, lacking the manpower, process or skill to handle larger projects. The resulting inefficiency would increase the project risk.</p>
+</div>
+<p>Size could be cost, number of use-cases or duration but what does “successfully completed“ mean? You scratch your head. Maybe BigCorp has some definition of its own that could be used for the CRM project?</p>
+<p>After searching through the corporate wiki you discover that BigCorp defines a software project as successful when:</p>
+<ul>
+<li>it’s on schedule,</li>
+<li>on budget,</li>
+<li>users are satisfied.</li>
+</ul>
+<p>You scribble down “project size, budget + schedule”. Is that it or are there other criteria? Maybe you could add something that has to do with “users are satisfied“? You lean back in your chair, close your eyes and think what could be missing, your thoughts become blurry and random.</p>
+<p>You are in a white room, there is no light source yet to room is bright. An elderly man in a suit stands in the center. He has the expression of someone that has been interrupted in mid-sentence.</p>
+<p>You: <em>Who are you? Where am I?</em></p>
+<p>Man in suit: <em>… defect potentials originally developed at IBM in the 70s, but a powerful metric …</em></p>
+<p>You: <em>Huh? Excuse me?</em></p>
+<p>Man in suit: <em>… it’s the sum of errors found in requirements errors, design errors, code errors, docum …</em></p>
+<p>You: <em>What are you talking about! Can you please tell me …</em></p>
+<p>Man in suit: <em>… and a bad fix is an attempt to fix a bug, about 7% errors are bugs in the fixes …</em></p>
+<p>You: <em>Excuse me sir, can you …</em></p>
+<p>Man in suit: <em>… Defect Discovery Efficiency is the number of defects you discover before you release the software. An important metric, but the next …</em></p>
+<p>You: <em>Hello sir, are you listening to me?</em></p>
+<p>Man in suit: <em>… important and that’s the Defect Removal Efficiency is the actual number of defects you remove before you ship to your first custom …</em></p>
+<p>You: <em>Sir! Can you hear me?</em></p>
+<p>Man in suit: <em>…the US average Defect Removal Efficiency is 85% and the best in class are over 99% …</em></p>
+<p>You wave at the man in order to interrupt him.</p>
+<p>Man in suit: <em>… every person in this room and every company represented in this room should know about its defect potentials and Defect Removal Efficiency and if …</em></p>
+<p>You turn around and search for a way to exit the room.</p>
+<p>Man in suit: <em>… don’t measure the Defect Removal Efficiency you are under the 85% …</em></p>
+<p>You jolt in your chair woken up by the sneeze of your colleague. What a bizarre dream, almost like a convenient plot device. Is Defect Removal Efficiency a real thing or just a product of your subconscious?</p>
+<p>Browsing a few sites reveals Defect Removal Efficiency (DRE) is a metric for measuring software quality via defects. According to Capers Jones getting to higher 90s% will lower the costs, shorter the delivery schedules and increase user satisfaction. That’s exactly what BigCorp wants!</p>
+<p>Oh, but how to measure this DRE? If it’s difficult to measure vendors won’t provide it. Fortunately you discover it’s very simple and can be computed from historical data in the bug tracking systems.</p>
+<div class="note">
+<div class="title">
+<p>Note</p>
+</div>
+<p>Suppose a vendor finds 900 bugs in pre-release testing. Then they ship it to the customer and the customer finds 100 bugs in the first 3 months. We add all bugs together 900 + 100 = 1000 bugs and since the vendor found 900 out of 1000 bugs his DRE is 90%.</p>
+</div>
+<p>Although a great metric you make a note to inquire about the number of users of the delivered software as well, because DRE might be high for projects that have not made it into production or are rarely used.</p>
+<p>You write down your findings as follows:</p>
+<ul>
+<li>did the vendor build a project of a particular size? How many?</li>
+<li>what was the budget and schedule overrun (if any) on the last project of this size?</li>
+<li>what was the DRE for this project (+ does it have users)? What is the vendors overall DRE?</li>
+</ul>
+<p>You feel you are on the roll and start thinking about more criteria like having experience in the problem domain, when suddenly you are interrupted by a colleague. “<em>Hey, regarding the CRM project a vendor has already been contracted and starts work next week</em>“.</p>
+<p>You ask him which of the 3 vendors was chosen and on what grounds? “<em>None</em>“ he replies. He sees your puzzled expression and adds “<em>yeah, it’s going to be implemented by the company where the CEOs husband is a majority shareholder, you know how these things work</em>“. You nod, smile and start packing your things because it’s 5 PM.</p>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>

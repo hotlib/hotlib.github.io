@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - Type matching in Java equals - getClass() vs. instanceof</title>
+        <link rel="stylesheet" href="../css/default.css" />
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                let myName = 'pavel',
+                    domain = '&#101toconsult&#105&#110&#103&#46&#115k',
+                    elements = document.querySelectorAll('[href=""]'),
+                    adr = myName + '&#64&#108' + domain,
+                    m = 'mail';
+
+                if (elements[0]) {
+                    elements[0].innerHTML = adr;
+                    elements[0].href = m + 'to' + ':' + adr;
+                }
+            }, false);
+        </script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>Type matching in Java equals - getClass() vs. instanceof</h1>
+        <div class="meta">[2011-09-25] </div>
+        <p>I look at the equivalence comparison of objects in the Java language</p>
+    </section>
+    <section>
+        <p>There is an ongoing dispute on how type matching in the <code>equals</code> method should be implemented. A nice overview article can be found in Angelika Langers <a href="http://www.angelikalanger.com/Articles/JavaSolutions/SecretsOfEquals/Equals.html">Secrets of equals() - Part 1</a> where you can find additional useful references. In short there are two possible ways to test the object’s type in the <code>equals</code> method:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">if</span> (<span class="fu">getClass</span>() != obj.<span class="fu">getClass</span>())</span></code></pre></div>
+<p>or</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">if</span> (!(obj <span class="kw">instanceof</span> SomeClass))</span></code></pre></div>
+<p>The properties of the <code>getClass()</code> approach can be summarized as:</p>
+<ul>
+<li>you can add fields into the subtypes and use them in subtype’s <code>equals</code> method. The notoriously popular example is that of subclassing the <code>Point</code> class to a <code>ColorPoint</code> class by adding an extra color field to it. The overridden equals in <code>ColorPoint</code> can match the point’s coordinates and also it’s color.</li>
+<li>The drawback of this approach is that the supertype <code>Point</code> can never be equal to its subtype <code>ColorPoint</code> (a good example is in Josh Bloch’s book Effective java, chapter 3)</li>
+</ul>
+<p>Simply put in the <code>instanceof</code> approach:</p>
+<ul>
+<li><p>the subtype and supertype can be equal,</p></li>
+<li><p>but equals is constrained to matching supertype fields only. The <code>instanceof</code> in supertype’s equals method does not reveal which type of the class hierarchy you are currently examining. As a result you only use supertype’s equals method and therefore you check only fields common to all types in the hierarchy. There is no way to add a field in a subtype that will be checked in the subtype’s overridden equals method without breaking the properties of <a href="https://mathworld.wolfram.com/EquivalenceRelation.html">equivalence relation</a>.</p></li>
+</ul>
+<p>At this point we see that one can argue for both approaches, but there is another aspect that makes a big difference. The former approach does not conform to the Liskov Substitution Principle - LSP while the latter does. For starters a good description of LSP is in the <a href="https://fi.ort.edu.uy/innovaportal/file/2032/1/design_principles.pdf">article</a> from Robert C. Martin, the original Liskov paper is a bit tough to read. There are several formulations of LSP, I think about LSP as:</p>
+<blockquote>
+<p>The subtype can’t break the contract between the supertype and method (function) where it is used.</p>
+</blockquote>
+<p>Although the <code>getClass()</code> approach breaks LSP the debate around <code>getClass()</code> vs. <code>instanceof</code> still goes on.</p>
+<p>On both projects I’ve worked so far (I am a junior dev) the <code>getClass()</code> approach was used for “better flexibility”. Although the LSP is a design guideline not a rigid OO theorem there are numerous simple examples where not following the LSP might cause problems. Consider a <code>Shape</code> class that checks whether a <code>Point</code> is the <code>Shape</code>s center:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">class</span> <span class="bu">Shape</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>    <span class="kw">public</span> <span class="dt">boolean</span> <span class="fu">isCentre</span>(<span class="bu">Point</span> p) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>        <span class="bu">Point</span> centre = <span class="fu">getCentre</span>();</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>        <span class="kw">return</span> centre.<span class="fu">equals</span>(p);</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>    }</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>}</span></code></pre></div>
+<p>If this method is called with a <code>ColorPoint</code> the result is false although the <code>ColorPoint</code> might have the shapes center coordinates. The <code>ColorPoint</code> violates the conditions of the <code>isCentre</code> method which was imposed by the <code>isCentre</code> ⇿ <code>Point</code> contract and thus breaks the LSP. This behaviour is a trap for a developers.</p>
+<p>A safe way to do type matching that conforms to OO principles is by using the <code>instanceof</code> operator. It is of course true that systems can be also implemented with the <code>getClass()</code> approach, you just won’t be able to rely on the logical equivalence in the system.</p>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>
