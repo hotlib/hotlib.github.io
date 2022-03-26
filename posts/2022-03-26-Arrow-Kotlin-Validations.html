@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - Validations using Kotlin Arrow</title>
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../pert.html">PERT</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>Validations using Kotlin Arrow</h1>
+        <div class="meta">[2022-03-26] </div>
+        <p>A short example how to validate data objects using Arrow and Validations</p>
+    </section>
+    <section>
+        <p>Currently I am exploring the <a href="https://arrow-kt.io/">Arrow</a> library in Kotlin. At work I need to validate Java <a href="https://en.wikipedia.org/wiki/Data_transfer_object">DTOs</a> and handle any data related problems that might arise. Arrows <code>Validated</code> seemed like a perfect fit for the task. I struggled a bit to understand the API so I decided to give it a try and create a simple example.</p>
+<p>I will be validating the following data class:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">open</span> <span class="kw">class</span> BookDto(<span class="kw">val</span> <span class="va">author</span>: <span class="dt">String</span>, <span class="kw">val</span> <span class="va">title</span>: <span class="dt">String</span>, <span class="kw">val</span> <span class="va">noValidationNeeded</span>: <span class="dt">String</span> = <span class="st">&quot;unimportant&quot;</span>)</span></code></pre></div>
+<p>From this <code>BookDto</code> we want to create an (immutable) instance of class <code>Book</code> where all fields are correct.</p>
+<p>Each validation error will have its own data type. We will recognize these errors:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">sealed</span> <span class="kw">class</span> BookError {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>    <span class="kw">data</span> <span class="kw">class</span> AuthorError(<span class="kw">val</span> <span class="va">msg</span>: <span class="dt">String</span>) : <span class="dt">BookError</span>()</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>    <span class="kw">data</span> <span class="kw">class</span> TitleError(<span class="kw">val</span> <span class="va">msg</span>: <span class="dt">String</span>) : <span class="dt">BookError</span>()</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    <span class="kw">data</span> <span class="kw">class</span> NamingError(<span class="kw">val</span> <span class="va">msg</span>: <span class="dt">String</span>) : <span class="dt">BookError</span>()</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>}</span></code></pre></div>
+<p><code>Validated</code> has a similar structure as the <code>Either</code> type i.e.:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>Validated&lt;BookError, DataWeWant&gt;</span></code></pre></div>
+<p>where <code>DataWeWant</code> is populated if no validation erros occur. <code>BookError</code> represents an error if data was incorrect.</p>
+<p>We can define validations for <code>author</code>, <code>title</code> and a combination of those two in the following way:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">fun</span> <span class="fu">BookDto</span>.<span class="fu">validateAuthor</span>(): <span class="dt">Validated</span>&lt;<span class="dt">BookError</span>, <span class="dt">String</span>&gt; {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>    <span class="kw">return</span> <span class="cf">if</span> (author == <span class="st">&quot;&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>        BookError.AuthorError(<span class="st">&quot;no author&quot;</span>).invalid()</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>    <span class="cf">else</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>        author.valid()</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>}</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a><span class="kw">fun</span> <span class="fu">BookDto</span>.<span class="fu">validateTitle</span>(): <span class="dt">Validated</span>&lt;<span class="dt">BookError</span>, <span class="dt">String</span>&gt; {</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a>    <span class="kw">return</span> <span class="cf">if</span> (title == <span class="st">&quot;&quot;</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a>        BookError.TitleError(<span class="st">&quot;no title&quot;</span>).invalid()</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a>    <span class="cf">else</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a>        title.valid()</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>}</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a><span class="kw">fun</span> <span class="fu">Book</span>.<span class="fu">validateNaming</span>(): <span class="dt">Validated</span>&lt;<span class="dt">BookError</span>, <span class="dt">Book</span>&gt; {</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a>    <span class="kw">return</span> <span class="cf">if</span> (title == author)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a>        BookError.NamingError(<span class="st">&quot;author and title can't match&quot;</span>).invalid()</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true"></a>    <span class="cf">else</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true"></a>        <span class="kw">this</span>.valid()</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true"></a>}</span></code></pre></div>
+<p>The <code>valid()</code> and <code>invalid()</code> are Arrow extensions functions which just wrap the receiver in Arrows <code>Valid</code> and <code>Invalid</code> instances. Why is the last validation extension defined on the <code>Book</code> class and not <code>BookDto</code>? I will explain later.</p>
+<p>Before we define the <code>Book</code> instance let’s look at how the <code>Book</code> will be instantiated:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="kw">val</span> <span class="va">bookDto</span> = BookDto(<span class="st">&quot;Test&quot;</span>, <span class="st">&quot;Test&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="kw">val</span> <span class="va">book</span> = Book.create(BookDto)</span></code></pre></div>
+<p>The signature for <code>create</code> is:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="kw">fun</span> <span class="fu">create</span>(<span class="va">aBookDto</span>: <span class="dt">BookDto</span>): <span class="dt">ValidatedNel</span>&lt;<span class="dt">BookError</span>, <span class="dt">Book</span>&gt;</span></code></pre></div>
+<p>What is <code>ValidatedNel</code>? Shouldn’t <code>create</code> return <code>Validated</code> like all the validation extension functions?</p>
+<p>The reason for returning <code>ValidatedNel</code> is that <code>Validated</code> represents only one validation error but <code>ValidatedNel</code> represents a list of errors. <code>ValidatedNel</code> is a type alias for:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a>ValidatedNel&lt;E, A&gt; = Validated&lt;Nel&lt;E&gt;, A&gt;</span></code></pre></div>
+<p>where <code>Nel</code> is a type alias for <code>Nel&lt;A&gt; = NonEmptyList&lt;A&gt;</code>. In other words <code>ValidatedNel</code> represents all validation errors that have been detected in <code>BookDto</code>.</p>
+<p>And now the most challenging part - the definition of the <code>create</code> function in <code>Book</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="kw">class</span> Book <span class="kw">private</span> <span class="kw">constructor</span>(<span class="va">author</span>: <span class="dt">String</span>, <span class="va">title</span>: <span class="dt">String</span>, <span class="va">irrelevant</span>: <span class="dt">String</span>) :</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>    <span class="dt">BookDto</span>(<span class="va">author</span>, <span class="va">title</span>, <span class="va">irrelevant</span>) {</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>    <span class="kw">companion</span> <span class="kw">object</span> {</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>        <span class="kw">fun</span> <span class="fu">create</span>(<span class="va">aBookDto</span>: <span class="dt">BookDto</span>): <span class="dt">ValidatedNel</span>&lt;<span class="dt">BookError</span>, <span class="dt">Book</span>&gt; {</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>            <span class="kw">return</span> aBookDto.validateAuthor().toValidatedNel()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>                .zip(aBookDto.validateTitle().toValidatedNel()) { author, title -&gt;</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>                    Book(</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>                        author,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a>                        title,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a>                        aBookDto.noValidationNeeded</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true"></a>                    )</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true"></a>                }.andThen { it.validateNaming().toValidatedNel() }</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true"></a>        }</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true"></a>    }</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true"></a>}</span></code></pre></div>
+<p>This might seem a bit complicated so let’s break it down:</p>
+<ul>
+<li><code>aBookDto.validateAuthor().toValidatedNel()</code> this calls our validation extension function. It returns at most 1 validation error. So why do we call <code>toValidatedNel()</code> at the end? Because we need to call the <code>zip</code> function. Arrow provides the <code>zip</code> function which aggregates this validation error with all other <code>BookDto</code> validation errors. The <code>zip</code> function is defined on the <code>ValidatedNel</code> alias so we need a <code>ValidatedNel</code> instance.</li>
+<li>the <code>zip</code> function calls the lambda <code>{ author, title -&gt; ...}</code> iff all <code>ValidatedNel</code> arguments contain the <code>Valid</code> instance. Otherwise it does not call the lambda and instead aggregates all validation errors from all <code>ValidatedNel</code> arguments. This <code>zip</code> resembles the classic <code>zip</code> function in that it “extracts” all <code>Valid</code> instances from all <code>ValidatedNel</code> and combines them together using the lambda expression.</li>
+<li>the <code>zip</code> function is currently limited to 22 arguments but we might want to do more validations. Also the validations might check multiple fields at the same time. This is where <code>andThen</code> comes in. It is applied to a <code>Valid</code> value but can return an <code>Invalid</code> value instead.</li>
+</ul>
+<p>That’s it. If we run the following code:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a>println(Book.create(BookDto(<span class="st">&quot;Test&quot;</span>, <span class="st">&quot;Test&quot;</span>)))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>println(Book.create(BookDto(<span class="st">&quot;&quot;</span>, <span class="st">&quot;*** and Peace&quot;</span>))) <span class="co">// Russian edition</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>println(Book.create(BookDto(<span class="st">&quot;&quot;</span>, <span class="st">&quot;&quot;</span>)))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a>println(Book.create(BookDto(<span class="st">&quot;John&quot;</span>, <span class="st">&quot;Arrows&quot;</span>)))</span></code></pre></div>
+<p>we get:</p>
+<pre class="shell"><code>Validated.Invalid(NonEmptyList(NamingError(msg=author and title can't match)))
+Validated.Invalid(NonEmptyList(AuthorError(msg=no author)))
+Validated.Invalid(NonEmptyList(AuthorError(msg=no author), TitleError(msg=no title)))
+Validated.Valid(Book@1445d7f)</code></pre>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>
