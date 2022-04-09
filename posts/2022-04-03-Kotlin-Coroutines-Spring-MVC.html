@@ -27,20 +27,25 @@
     <section>
         <p>Recently I needed to add a REST endpoint in a Spring MVC app. To produce a result the endpoint had to call:</p>
 <ul>
-<li>2 databases,</li>
+<li>3 databases,</li>
 <li>a REST call,</li>
 <li>KAFKA.</li>
 </ul>
 <p>The queries to the databases could be particulary time consuming.</p>
-<p>I wanted to offload the Spring MVC worker-threads and do as much IO operations in parallel. Since Spring MVC was initially build around the “one request per thread” model I was not sure how this could be achieved (and somehow I haven’t noticed that <a href="https://spring.io/blog/2016/07/20/notes-on-reactive-programming-part-iii-a-simple-http-server-application">Spring moved on years ago</a>).</p>
-<p>For running the individual IO operations Kotlin coroutines seemed like the natural fit. I also wanted to break off the computation after a specific period because of business reasons.</p>
-<p>Fortunately <a href="https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/mvc.html">since version 3.2 Spring provides</a> a convenience class <code>DeferredResult</code> which enables decoupling processing of requests from worker-threads. I wanted to tie a coroutine computation to the <code>DeferredResult</code> and hence the request itself.</p>
+<p>I wanted to offload the Spring MVC worker-threads and do as much IO operations in parallel as possible. Since Spring MVC was initially build around the “one request per thread” model I was not sure how this could be achieved (and somehow I haven’t noticed that <a href="https://spring.io/blog/2016/07/20/notes-on-reactive-programming-part-iii-a-simple-http-server-application">Spring moved on years ago</a>).</p>
+<p>For running the individual IO operations Kotlin coroutines seemed like the natural fit. Kotlin coroutines can be a tricky subject, I learned a lot from the following 3 videos:</p>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=ZTDXo0-SKuU">Kotlin Couroutines 101 by Manuel Vivo</a> a general introduction to coroutines</li>
+<li><a href="https://www.youtube.com/watch?v=w0kfnydnFWI">KotlinConf 2019: Coroutines! Gotta catch ’em all! by Florina Muntenescu &amp; Manuel Vivo</a> cancellation and error handling</li>
+<li><a href="https://www.youtube.com/watch?v=oerXox4U9MU">Pedro Felix Using Kotlin Coroutines for Asynchronous and Concurrent Programming</a> general use of coroutines</li>
+</ul>
+<p>I also wanted to break off the computation after a specific period because of business reasons. Fortunately <a href="https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/mvc.html">since version 3.2 Spring provides</a> a convenience class <code>DeferredResult</code> which enables the decoupling of request processing from worker-threads. I wanted to tie a coroutine computation to the <code>DeferredResult</code> and hence the request itself.</p>
 <p>The solution I came up with is the following:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">class</span> DeferredResultCoroutineScope&lt;<span class="dt">T</span>&gt;(<span class="va">timeout</span>: <span class="dt">Long</span>):</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>    <span class="dt">DeferredResult</span>&lt;<span class="dt">T</span>&gt;(<span class="va">timeout</span>), <span class="dt">CoroutineScope</span> {</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="kw">var</span> <span class="va">job</span>: Job = Job()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="kw">private</span> <span class="kw">var</span> <span class="va">job</span>: Job = Job() <span class="co">// parent Job of all coroutines that have started for this HTTP request</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="kw">override</span> <span class="kw">val</span> <span class="va">coroutineContext</span>: CoroutineContext</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>        <span class="kw">get</span>() = EmptyCoroutineContext</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>        <span class="kw">get</span>() = job</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>}</span></code></pre></div>
 <p>This creates a class which holds the computation and eventually the result itself (or an error).</p>
 <p>As for the endpoint itself it would be just:</p>
@@ -49,18 +54,20 @@
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="kw">fun</span> <span class="fu">test</span>(): <span class="dt">DeferredResult</span>&lt;<span class="dt">String</span>&gt; {</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>    <span class="kw">return</span> DeferredResultCoroutineScope&lt;<span class="kw">String</span>&gt;(2000L).</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>    apply {</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>        job = launch (Dispatchers.IO) {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>        launch (Dispatchers.IO) {</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>            <span class="kw">val</span> <span class="va">c1</span> = async { call1() }</span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>            <span class="kw">val</span> <span class="va">c2</span> = async { call2() }</span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>            setResult(call3(c1.await(), c2.await()))</span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>        }</span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>        onTimeout {</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>            setErrorResult(AsyncRequestTimeoutException())</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>            job.cancel()</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>            cancel()</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>            setErrorResult(AsyncRequestTimeoutException())</span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>        }</span>
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>    }</span>
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>}</span></code></pre></div>
-<p>I stripped away all error handling so it’s more readable.</p>
+<p>In order for <code>call1</code>, <code>call2</code> and <code>call3</code> to be “cancellable” they need to check if they have been cancelled themselves. Otherwise they will continue running even after the request times out.</p>
+<p>This can be achieved by calling functions like <a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/ensure-active.html">ensureActive</a>, <a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/is-active.html">isActive</a> or any suspending function from <code>kotlinx.coroutines</code> (all support cancellation) in <code>call1</code>, <code>call2</code>, <code>call3</code>. Note that if you are calling blocking calls from the coroutine then they will not be cancelled byt the <code>cancel()</code> call!</p>
+<p>I leave out error handling from the sample code so it’s more readable.</p>
     </section>
     <nav>
         <a href="../">back</a>

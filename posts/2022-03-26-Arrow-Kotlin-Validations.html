@@ -25,7 +25,7 @@
         <p>A short example how to validate data objects using Arrow and Validations</p>
     </section>
     <section>
-        <p>Currently I am exploring the <a href="https://arrow-kt.io/">Arrow</a> library in Kotlin. At work I need to validate Java <a href="https://en.wikipedia.org/wiki/Data_transfer_object">DTOs</a> and handle any data related problems that might arise. Arrows <code>Validated</code> seemed like a perfect fit for the task. I struggled a bit to understand the API so I decided to give it a try and create a simple example.</p>
+        <p>Currently, I am exploring the <a href="https://arrow-kt.io/">Arrow</a> library in Kotlin. At work, I need to validate Java <a href="https://en.wikipedia.org/wiki/Data_transfer_object">DTOs</a> and handle any data related problems that might arise. Arrows <code>Validated</code> seemed like a perfect fit for the task. I struggled a bit to understand the API so I decided to give it a try and create a simple example.</p>
 <p>I will be validating the following data class:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode kotlin"><code class="sourceCode kotlin"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">open</span> <span class="kw">class</span> BookDto(<span class="kw">val</span> <span class="va">author</span>: <span class="dt">String</span>, <span class="kw">val</span> <span class="va">title</span>: <span class="dt">String</span>, <span class="kw">val</span> <span class="va">noValidationNeeded</span>: <span class="dt">String</span> = <span class="st">&quot;unimportant&quot;</span>)</span></code></pre></div>
 <p>From this <code>BookDto</code> we want to create an (immutable) instance of class <code>Book</code> where all fields are correct.</p>
