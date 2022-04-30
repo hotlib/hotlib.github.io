@@ -38,6 +38,7 @@
 <li><a href="https://www.youtube.com/watch?v=ZTDXo0-SKuU">Kotlin Couroutines 101 by Manuel Vivo</a> a general introduction to coroutines</li>
 <li><a href="https://www.youtube.com/watch?v=w0kfnydnFWI">KotlinConf 2019: Coroutines! Gotta catch ’em all! by Florina Muntenescu &amp; Manuel Vivo</a> cancellation and error handling</li>
 <li><a href="https://www.youtube.com/watch?v=oerXox4U9MU">Pedro Felix Using Kotlin Coroutines for Asynchronous and Concurrent Programming</a> general use of coroutines</li>
+<li><a href="https://www.youtube.com/watch?v=a3agLJQ6vt8">KotlinConf 2018 - Kotlin Coroutines in Practice by Roman Elizarov</a> how to structure code with coroutines</li>
 </ul>
 <p>I also wanted to break off the computation after a specific period because of business reasons. Fortunately <a href="https://docs.spring.io/spring-framework/docs/3.2.x/spring-framework-reference/html/mvc.html">since version 3.2 Spring provides</a> a convenience class <code>DeferredResult</code> which enables the decoupling of request processing from worker-threads. I wanted to tie a coroutine computation to the <code>DeferredResult</code> and hence the request itself.</p>
 <p>The solution I came up with is the following:</p>
