@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - Estimating the Number of Defects in Source Code</title>
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../pert.html">PERT</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>Estimating the Number of Defects in Source Code</h1>
+        <div class="meta">[2022-11-01] </div>
+        <p>A method for estimating defects present in the source code</p>
+    </section>
+    <section>
+        <p>It would be great to know how many undiscovered defects are present in the source code. This information could be useful in:</p>
+<ul>
+<li>setting release deadlines,</li>
+<li>staff capacity planning,</li>
+<li>software quality assessment,</li>
+<li>evaluation of current development process.</li>
+</ul>
+<p>There are several techniques for defect prediction. Most prediction techniques require historical data or data related to specific characteristics of the software project.</p>
+<p>A well-known technique is the use of defect density per KLOC. Unfortunately defect density might vary considerably even within the same organisation, because of factors like SDLC used, architecture, software complexity, team experience etc.</p>
+<p>Other approaches predict defects using statistical distributions like Poisson or Rayleigh. These distributions require parameters that are project specific and need to be computed from collected data (for example a measure of efficiency of the defect discovery process).</p>
+<p>In this post I want to describe the Lincoln–Petersen method for estimating animal population sizes (also known as “mark and recapture”). This method consists of four steps:</p>
+<ol type="1">
+<li>capture individuals of the given species (with total population <code>N</code>),</li>
+<li>mark these captured animals via a tag or a ring and then release them (<code>M</code> animals are marked),</li>
+<li>recapture new individuals (<code>C</code> animals are captured in total),</li>
+<li>find out how many have a mark (<code>R</code> animals are marked).</li>
+</ol>
+<p>The main idea behind the Lincoln-Petersen method is that the proportion of marked animals to captured animals in steps 3. and 4. is roughly equal to the proportion of all marked animals (step 2.) to the total population of the species. This can be expressed as the formula:</p>
+<pre><code>R/C ≈ M/N</code></pre>
+<p>After rearranging the variables we can estimate the total population of animals as:</p>
+<pre><code>N ≈ (M*C) / R</code></pre>
+<p>This approach gives us only a rough estimate. If significant time passes between captures (i.e. between steps 1. and 3.) the estimate might be even more off due to animals mortality or migration.</p>
+<p>This approach can be also used in software defect prediction. Let’s look at a concrete example.</p>
+<p>We have a software system where we deliberately inject 15 defects into the source code. We put this system to a test and 35 defects are found out of which 6 have been injected by us. How many defects are still present in the source code? With the Lincoln-Petersen formula we get:</p>
+<pre><code>(15 * 35)/6 - 35 ≈ 53</code></pre>
+<p>So most likely there are still 53 undetected defects present, 88 (53+35) defects in total. But what does <em>most likely</em> mean? How much more likely is it to have 88 defects in this case than let’s say 125? or 260? We would need to somehow quantify different defect count estimations (88, 125, 260, …etc.) and compare them.</p>
+<p>The Lincoln-Petersen method gives us the most likely population value, but it does not provide any clues about the likelihood of this value being correct. Luckily statisticians came up with a clever solution for exactly this problem using the hypergeometric distribution.</p>
+<p>This distribution computes the probability of drawing a sample of size <code>C</code> objects with <code>R</code> marked objects out of a population <code>N</code> objects containing <code>M</code> marked objects. The explanation of the distribution itself is out of scope of this post. It’s very easy to use the hypergeometric distribution in Excel via the HYPGEOM.DIST function. The Excel documentation says:</p>
+<blockquote>
+<p>HYPGEOM.DIST returns the probability of a given number of sample successes, given the sample size, population successes, and population size.</p>
+</blockquote>
+<p>What we can now do is iterate over different population sizes (88, 125, 260, …) and plot individual probabilities on a chart. If we do this for our example: 15 defects injected (<code>M</code>), 35 defects found (<code>C</code>) and 6 identified as the ones we injected (<code>R</code>) with <code>N</code> ranging from 0 to 321 we get the following plot:</p>
+<p><a href="../images/defects6_15_35.png"><img src="../images/defects6_15_35.png" width="640" /></a></p>
+<p>As we predicted the peak is around 88, but that does not mean that the population size (i.e. total defects) could not be 125 or 260, the chart only expresses that it’s more likely it’s around 88 than around 260.</p>
+<p>How would the probabilities change if we only found 3 injected defects in the 35 discovered defects? Let’s see what Lincoln-Petersen would predict:</p>
+<pre><code>(15 * 35)/3 - 35 ≈ 140</code></pre>
+<p>So there should be around 140 undetected defects and around 175 (140+35) defects in total. We detected only 3 out of 15 injected defects which will impact the uncertainty of the total number of defects.</p>
+<p><a href="../images/defects3_15_35.png"><img src="../images/defects3_15_35.png" width="640" /></a></p>
+<p>This is an interesting observation - the less injected defects we discover the higher the uncertainty about the total defect count in our source code.</p>
+<p>Is the opposite also true? The more injected defects we discover (among the 35) the more certain we are about the total defect count? Let’s try with <code>R=11</code> (i.e. 11 out of 35 discovered defects are those that were injected):</p>
+<p><a href="../images/defects11_15_35.png"><img src="../images/defects11_15_35.png" width="640" /></a></p>
+<p>We see what we have suspected - if we discover more injected defects the estimate narrows down. The chart however needs to be interpreted carefully.</p>
+<p>It is likely that the total defect count is around 45 - 65, but that does not mean it can’t be 125 or 260! Although 125 and 260 have low probabilities they are not 0 (such small values are not visible on the chart, but they are non-zero). The only estimates that have 0 probability are the ones that have the value 38 or lower, why? Because if we injected 15 defects and discovered 35 (11 of which overlap with the injected) then there are at least 35 + 15 - 11 defects in the source code (i.e. at least 39 defects are present).</p>
+<p>There are many factors impacting the quality of the estimation, some of them are:</p>
+<ul>
+<li>the nature of defects (there are many types of defects, we can’t lump all of them together),</li>
+<li>time elapsed between injecting defects and detection (the source code changes),</li>
+<li>process of defect defection (all defects should have equal probability of being discovered, which is usually not the case),</li>
+<li>…</li>
+</ul>
+<p>So is this estimation useful, can it be trusted? The short answer is: I don’t know. I haven’t tried it yet and I haven’t found any scientific papers discussing this approach. If you have any experience with this approach please let me know ☺</p>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>

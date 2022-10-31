@@ -33,7 +33,7 @@
 </ul>
 <p>The queries to the databases could be particulary time consuming.</p>
 <p>I wanted to offload the Spring MVC worker-threads and do as much IO operations in parallel as possible. Since Spring MVC was initially build around the “one request per thread” model I was not sure how this could be achieved (and somehow I haven’t noticed that <a href="https://spring.io/blog/2016/07/20/notes-on-reactive-programming-part-iii-a-simple-http-server-application">Spring moved on years ago</a>).</p>
-<p>For running the individual IO operations Kotlin coroutines seemed like the natural fit. Kotlin coroutines can be a tricky subject, I learned a lot from the following 3 videos:</p>
+<p>For running the individual IO operations Kotlin coroutines seemed like the natural fit. Kotlin coroutines can be a tricky subject, I learned a lot from the following 4 videos:</p>
 <ul>
 <li><a href="https://www.youtube.com/watch?v=ZTDXo0-SKuU">Kotlin Couroutines 101 by Manuel Vivo</a> a general introduction to coroutines</li>
 <li><a href="https://www.youtube.com/watch?v=w0kfnydnFWI">KotlinConf 2019: Coroutines! Gotta catch ’em all! by Florina Muntenescu &amp; Manuel Vivo</a> cancellation and error handling</li>
