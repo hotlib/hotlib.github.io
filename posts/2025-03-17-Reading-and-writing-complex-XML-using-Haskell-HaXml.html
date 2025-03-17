@@ -194,6 +194,7 @@ HaXml</code></pre>
 <span id="cb22-10"><a href="#cb22-10" aria-hidden="true"></a>       (<span class="dt">Right</span> ecc) <span class="ot">=</span> <span class="fu">fst</span> <span class="op">$</span> runParser elementECommerceConnect [<span class="dt">CElem</span> ecc' (posInNewCxt <span class="st">&quot;./resource/err&quot;</span> <span class="dt">Nothing</span>)]</span>
 <span id="cb22-11"><a href="#cb22-11" aria-hidden="true"></a>   <span class="kw">in</span>  ecc</span></code></pre></div>
 <p>This is error-prone and relies on implementation details of HaXml.</p>
+<p>Full code can be found <a href="https://github.com/hotlib/haskell/tree/master/XmlParsing">here</a></p>
 <h1 id="conclusion">Conclusion</h1>
 <p>The biggest weakness of generating bindings with HaXml are dependencies between XSDs, the more dependencies the worse manual intervention. There is also no way to automate the process, and you can’t predict what changes will be necessary. If you don’t have highly dependant set of XSDs and changes are not frequent then HaXml can be used for generating Haskell bindings.</p>
     </section>
