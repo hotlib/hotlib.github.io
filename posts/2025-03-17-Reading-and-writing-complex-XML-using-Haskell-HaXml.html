@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico" />
+        <title>Blog - Generating Haskell data types for complex XSDs using HaXml</title>
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../pert.html">PERT</a>
+                <a href="../about.html">About</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <article>
+    <section class="header">
+        <h1>Generating Haskell data types for complex XSDs using HaXml</h1>
+        <div class="meta">[2025-03-17] </div>
+        <p>We demonstrate that HaXml can be used to generate fairly complex data bindings in Haskell, though the process is not straightforward</p>
+    </section>
+    <section>
+        <p>The goal is to generate Haskell <code>data</code>/<code>newtype</code> bindings for complex XSDs. Defining Haskell bindings for XSDs with hundreds of XSD-types manually is not feasible. It has been a decade since I wrote a post <a href="https://hotlib.github.io/posts/2015-08-06-Introduction-to-HaXml.html">Introduction to HaXml</a>. I wanted to re-visit the <a href="https://hackage.haskell.org/package/HaXml-1.25.14">HaXml</a> library and find a way to generate Haskell bindings for a large XSD.</p>
+<p>As an example we will use <a href="https://raw.githubusercontent.com/hotlib/haskell/refs/heads/master/XmlParsing/resources/threeDS_V2.2-0.3.xsd">threeDS_V2.2-0.3.xsd</a> (<a href="https://upc.ua/ecommerce/files/threeDS-0.1.cert.xsd/">link to older version</a>). An XML for this XSD is the following:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode xml"><code class="sourceCode xml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">&lt;?xml</span> version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;<span class="kw">?&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">&lt;ECommerceConnect</span><span class="ot"> xmlns:ns2=</span><span class="st">&quot;http://www.w3.org/2000/09/xmldsig#&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>    <span class="kw">&lt;EMV3DSRequest</span><span class="ot"> id=</span><span class="st">&quot;9&quot;</span><span class="kw">&gt;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>        <span class="kw">&lt;MerchantID&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>            123456789012345</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>        <span class="kw">&lt;/MerchantID&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>        <span class="kw">&lt;TerminalID&gt;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>            X123456</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>        <span class="kw">&lt;/TerminalID&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>        <span class="kw">&lt;InitBRWRequest&gt;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>            <span class="kw">&lt;InitAuthData&gt;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>                <span class="kw">&lt;CardNum&gt;</span>1234512345<span class="kw">&lt;/CardNum&gt;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>                <span class="kw">&lt;ExpYear&gt;</span>2029<span class="kw">&lt;/ExpYear&gt;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>                <span class="kw">&lt;ExpMonth&gt;</span>08<span class="kw">&lt;/ExpMonth&gt;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a>                <span class="kw">&lt;TotalAmount&gt;</span>123<span class="kw">&lt;/TotalAmount&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>                <span class="kw">&lt;Currency&gt;</span>123<span class="kw">&lt;/Currency&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>            <span class="kw">&lt;/InitAuthData&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>            <span class="kw">&lt;eventCallbackUrl&gt;</span>https://localhost/1234567<span class="kw">&lt;/eventCallbackUrl&gt;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a>            <span class="kw">&lt;challengeWindowSize&gt;</span>00<span class="kw">&lt;/challengeWindowSize&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a>            <span class="kw">&lt;skipAutoBrowserInfoCollect&gt;</span>Y<span class="kw">&lt;/skipAutoBrowserInfoCollect&gt;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>        <span class="kw">&lt;/InitBRWRequest&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a>    <span class="kw">&lt;/EMV3DSRequest&gt;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a><span class="kw">&lt;/ECommerceConnect&gt;</span></span></code></pre></div>
+<p>Some XSDs reference other XSDs. It’s nearly impossible to merge/flatten dependent XSDs unless they use the same namespaces. Hence, for generating bindings you will need to have all XSDs that are referenced <strong>and used</strong> from your XSD.</p>
+<p>HaXml has a helper utility for generating bindings called <a href="https://hackage.haskell.org/package/HaXml-1.25.14/src/src/tools/XsdToHaskell.hs">XsdToHaskell</a> (<a href="https://raw.githubusercontent.com/hotlib/haskell/refs/heads/master/XmlParsing/src/XsdToHaskell.hs">github link</a>)</p>
+<p>The utility needs the following dependencies:</p>
+<pre class="shell"><code>polyparse
+pretty
+HaXml</code></pre>
+<p>Ideally, your XSDs dependencies should form a directed acyclic graph. It doesn’t matter from which XSD you start generating bindings, but it’s easier to start with XSDs without dependencies and then proceed to the dependant XSDs, otherwise you won’t be able to resolve compilation errors.</p>
+<p>In our case we have 2 external XSD that are referenced, but only one which is used (<a href="https://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd">xmldsig-core-schema.xsd</a>) inside threeDS_V2.2-0.3.xsd, so let’s start with it. After compiling <code>XsdToHaskell</code> all we need to do is the following:</p>
+<pre class="shell"><code>./XsdToHaskell &lt; xmldsig-core-schema.xsd &gt; XmldSig.hs</code></pre>
+<p>After XmldSig.hs was generated we need to clean-up the generated code. If we open XmldSig.hs it starts with something like:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="dt">Parse</span> <span class="dt">Success</span><span class="op">!</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="co">-----------------</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a><span class="dt">Schema</span> {schema_elementFormDefault <span class="ot">=</span> <span class="op">......</span>)]}</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a><span class="co">-----------------</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a><span class="ot">{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a><span class="ot">{-# OPTIONS_GHC -fno-warn-duplicate-exports #-}</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">V'</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a>  ( <span class="kw">module</span> <span class="dt">V'</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a>  ) <span class="kw">where</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a> </span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.Schema.Schema</span> (<span class="dt">SchemaType</span>(..),<span class="dt">SimpleType</span>(..),<span class="dt">Extension</span>(..),<span class="dt">Restricts</span>(..))</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a><span class="kw">import</span> ........</span></code></pre></div>
+<p>Okay, let’s remove the console output, the <code>Schema</code> and give the module a proper name. We get something like this:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="ot">{-# OPTIONS_GHC -fno-warn-duplicate-exports #-}</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">XmldSig</span> <span class="kw">where</span> <span class="co">-- added module name</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a><span class="kw">import</span> ........</span></code></pre></div>
+<p>We make sure XmldSig.hs compiles, and we move to threeDS_V2.2-0.3.xsd. Let’s generate the bindings for threeDS_V2.2-0.3.xsd:</p>
+<pre class="shell"><code>./XsdToHaskell &lt; threeDS_V2.2-0.3.xsd &gt; ThreeDS.hs</code></pre>
+<p>When we open ThreeDS.hs we see the following:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a><span class="dt">Parse</span> <span class="dt">Success</span><span class="op">!</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a><span class="co">-----------------</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a><span class="dt">Schema</span> {schema_<span class="op">.......</span>}</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a><span class="co">-----------------</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a><span class="ot">{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a><span class="ot">{-# OPTIONS_GHC -fno-warn-duplicate-exports #-}</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">V'</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a>  ( <span class="kw">module</span> <span class="dt">V'</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a>  ) <span class="kw">where</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a> </span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.Schema.Schema</span> (<span class="dt">SchemaType</span>(..),<span class="dt">SimpleType</span>(..),<span class="dt">Extension</span>(..),<span class="dt">Restricts</span>(..))</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.Schema.Schema</span> <span class="kw">as</span> <span class="dt">Schema</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.OneOfN</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Text.XML.HaXml.Schema.PrimitiveTypes</span> <span class="kw">as</span> <span class="dt">Xs</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Xmldsig'core'schema'xsd</span> <span class="kw">as</span> <span class="dt">Ds</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Xenc'schema'xsd</span></span></code></pre></div>
+<p>There are 2 imports which are not part of HaXml: <code>Xmldsig'core'schema'xsd</code> and <code>Xenc'schema'xsd</code>. The <em>schema</em> keyword in these 2 imports indicates that they are external dependencies which <strong>could</strong> be needed in generated bindings. In this case <a href="https://www.w3.org/TR/xmlenc-core/xenc-schema.xsd">xenc schema</a> is not used, but xmldsig XSD is → we need to add the import <code>XmldSig</code>.</p>
+<p>Clean-up of ThreeDS.hs looks like this:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a><span class="ot">{-# OPTIONS_GHC -fno-warn-duplicate-exports #-}</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">ThreeDS</span> <span class="kw">where</span> <span class="co">-- added module name</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a> </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.Schema.Schema</span> (<span class="dt">SchemaType</span>(..),<span class="dt">SimpleType</span>(..),<span class="dt">Extension</span>(..),<span class="dt">Restricts</span>(..))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.Schema.Schema</span> <span class="kw">as</span> <span class="dt">Schema</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.OneOfN</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Text.XML.HaXml.Schema.PrimitiveTypes</span> <span class="kw">as</span> <span class="dt">Xs</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">XmldSig</span> <span class="kw">as</span> <span class="dt">Ds</span> <span class="co">-- added dependency xmldsig </span></span></code></pre></div>
+<p>Next step is to import <code>ThreeDS</code> and see if it compiles correctly.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="op">....</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">ThreeDS</span> <span class="kw">as</span> <span class="dt">TDS</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a><span class="op">....</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a><span class="op">....</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a><span class="op">....</span></span></code></pre></div>
+<p>Unfortunately compilation returns the following error:</p>
+<pre class="shell"><code>parse error on input ‘.’</code></pre>
+<p>After looking at the generated code we see an incorrectly generated name:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>    , eCommerceConnect_Ds<span class="op">.</span><span class="ot">signature ::</span> <span class="dt">Maybe</span> <span class="dt">Ds.Signature</span></span></code></pre></div>
+<p>the fix is easy, we just change it to:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a>    ,<span class="ot"> eCommerceConnect_Ds_signature ::</span> <span class="dt">Maybe</span> <span class="dt">Ds.Signature</span>   </span></code></pre></div>
+<p>We retry compilation and we get another error:</p>
+<pre class="shell"><code>Not in scope: type constructor or class ‘Xsd.XsdString’</code></pre>
+<p>This can be fixed by importing HaXml <code>PrimitiveTypes</code>. Note that importing <code>PrimitiveTypes</code> from HaXml will clash with <code>Token</code> type generated in ThreeDS.hs, hence the import also hides <code>Token</code></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.Schema.PrimitiveTypes</span> <span class="kw">as</span> <span class="dt">Xsd</span> <span class="kw">hiding</span> (<span class="dt">Token</span>)</span></code></pre></div>
+<p>We try to compile and yet again we get a compilation error:</p>
+<pre class="shell"><code>Not in scope: type constructor or class ‘Ds.Signature’</code></pre>
+<p>This is due to ambiguity between element name and element type attributes in XSD. We can find that <code>Maybe Ds.Signature</code> should have been <code>Maybe Ds.SignatureType</code> and thus the fix is simple:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="ot">eCommerceConnect_Ds_signature ::</span> <span class="dt">Maybe</span> <span class="dt">Ds.Signature</span></span></code></pre></div>
+<p>changes to:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="ot">eCommerceConnect_Ds_signature ::</span> <span class="dt">Maybe</span> <span class="dt">Ds.SignatureType</span></span></code></pre></div>
+<p>Finally, all compilation errors are resolved.</p>
+<p>We have generated all the types, but now we need to do something useful with them - read and write XMLs!</p>
+<p>HaXml uses the typeclass <code>XmlContent</code> which instructs the parser how to process XMLs. Luckily the generated bindings also contain these instructions and we can plug them in the <code>XmlContent</code>. We also need to supply <code>HTypeable</code> typeclass instance (which I describe in my previous HaXml post) - but it won’t be used as the generated bindings contain all the parsing instructions. In order to read and write our sample XML we need to define the following instances:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTypeable</span> <span class="dt">ECommerceConnect</span> <span class="kw">where</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a>  toHType x <span class="ot">=</span> <span class="fu">undefined</span> <span class="co">-- doesn't matter</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">XmlContent</span> <span class="dt">ECommerceConnect</span> <span class="kw">where</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true"></a>  parseContents <span class="ot">=</span> elementECommerceConnect</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true"></a>  toContents <span class="ot">=</span> elementToXMLECommerceConnect</span></code></pre></div>
+<p>The functions <code>elementECommerceConnect</code> and <code>elementToXMLECommerceConnect</code> can be <a href="https://github.com/hotlib/haskell/blob/508f949905143f06c93268ac22641f3bae0c7ba2/XmlParsing/src/ThreeDS.hs#L24">found in the generated module</a>.</p>
+<p>Once these are defined we can you HaXml standard API to read and write XMLs. We use the function <code>readXml</code> to read the sample XML. The Haskell representation looks like this:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a><span class="dt">ECommerceConnect</span> {eCommerceConnect_choice0 <span class="ot">=</span> <span class="dt">OneOf3</span> (<span class="dt">EMV3DSRequest</span> {eMV3DSRequest_id <span class="ot">=</span> <span class="dt">XsdString</span> <span class="st">&quot;9&quot;</span>, eMV3DSRequest_merchantID <span class="ot">=</span> <span class="dt">XsdString</span> <span class="st">&quot;\n            123456789012345\n        &quot;</span>, eMV3DSRequest_terminalID <span class="ot">=</span> <span class="dt">XsdString</span> <span class="st">&quot;\n            X123456\n        &quot;</span>, eMV3DSRequest_choice2 <span class="ot">=</span> <span class="dt">OneOf3</span> (<span class="dt">InitBRWRequest</span> {initBRWRequest_initAuthData <span class="ot">=</span> <span class="dt">InitAuthData</span> {initAuthData_choice0 <span class="ot">=</span> <span class="dt">OneOf2</span> (<span class="dt">TypeCardNum</span> (<span class="dt">Long</span> <span class="dv">1234512345</span>),<span class="dt">TypeExpYear</span> (<span class="dt">XsdString</span> <span class="st">&quot;2029&quot;</span>),<span class="dt">TypeExpMonth</span> (<span class="dt">XsdString</span> <span class="st">&quot;08&quot;</span>)), initAuthData_totalAmount <span class="ot">=</span> <span class="dt">Long</span> <span class="dv">123</span>, initAuthData_currency <span class="ot">=</span> <span class="dt">TypeCurrency</span> (<span class="dt">XsdString</span> <span class="st">&quot;123&quot;</span>)}, initBRWRequest_eventCallbackUrl <span class="ot">=</span> <span class="dt">TypeCallbackUrl</span> (<span class="dt">AnyURI</span> <span class="st">&quot;https://localhost/1234567&quot;</span>), initBRWRequest_challengeWindowSize <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">Type</span>СhallengeWindowSize (<span class="dt">XsdString</span> <span class="st">&quot;00&quot;</span>)), initBRWRequest_skipAutoBrowserInfoCollect <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">SkipAutoBrowserInfoCollect</span> (<span class="dt">XsdString</span> <span class="st">&quot;Y&quot;</span>))})}), eCommerceConnect_Ds_signature <span class="ot">=</span> <span class="dt">Nothing</span>}</span></code></pre></div>
+<p>We can use the HaXml function <code>showXml</code> to write the above Haskell <code>ECommerceConnect</code> instance into XML. We get the following XML back:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode xml"><code class="sourceCode xml"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true"></a>&quot;<span class="kw">&lt;?xml</span> version='1.0' <span class="kw">?&gt;</span>\n<span class="kw">&lt;ECommerceConnect&gt;&lt;EMV3DSRequest</span><span class="ot"> id=</span><span class="st">&quot;9&quot;</span><span class="kw">&gt;&lt;MerchantID&gt;</span>123456789012345<span class="kw">&lt;/MerchantID&gt;&lt;TerminalID&gt;</span>X123456<span class="kw">&lt;/TerminalID&gt;&lt;InitBRWRequest&gt;&lt;InitAuthData&gt;&lt;CardNum&gt;</span>1234512345<span class="kw">&lt;/CardNum&gt;&lt;ExpYear&gt;</span>2029<span class="kw">&lt;/ExpYear&gt;&lt;ExpMonth&gt;</span>08<span class="kw">&lt;/ExpMonth&gt;&lt;TotalAmount&gt;</span>123<span class="kw">&lt;/TotalAmount&gt;&lt;Currency&gt;</span>123<span class="kw">&lt;/Currency&gt;&lt;/InitAuthData&gt;&lt;eventCallbackUrl&gt;</span>https://localhost/1234567<span class="kw">&lt;/eventCallbackUrl&gt;&lt;challengeWindowSize&gt;</span>00<span class="kw">&lt;/challengeWindowSize&gt;&lt;skipAutoBrowserInfoCollect&gt;</span>Y<span class="kw">&lt;/skipAutoBrowserInfoCollect&gt;&lt;/InitBRWRequest&gt;&lt;/EMV3DSRequest&gt;&lt;/ECommerceConnect&gt;</span>&quot;</span></code></pre></div>
+<p>The complete example looks like this:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span> (main) <span class="kw">where</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">ThreeDS</span> <span class="kw">as</span> <span class="dt">TDS</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.Text.IO</span> <span class="kw">as</span> <span class="dt">TX</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.XmlContent</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.XmlContent.Parser</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.Text</span> (unpack)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">HTypeable</span> <span class="dt">ECommerceConnect</span> <span class="kw">where</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true"></a>  toHType x <span class="ot">=</span> <span class="fu">undefined</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">XmlContent</span> <span class="dt">ECommerceConnect</span> <span class="kw">where</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true"></a>  parseContents <span class="ot">=</span> elementECommerceConnect</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true"></a>  toContents <span class="ot">=</span> elementToXMLECommerceConnect</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true"></a></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true"></a><span class="ot">deserialize ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ECommerceConnect</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true"></a>deserialize s <span class="ot">=</span> <span class="kw">let</span> (<span class="dt">Right</span> ecomm) <span class="ot">=</span> readXml s <span class="kw">in</span> ecomm</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true"></a></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true"></a>  xml <span class="ot">&lt;-</span> TX.readFile <span class="st">&quot;./resources/sample.xml&quot;</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true"></a>  <span class="kw">let</span> ecomm <span class="ot">=</span> deserialize <span class="op">$</span> unpack xml</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true"></a>  <span class="fu">print</span> ecomm</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true"></a>  <span class="fu">print</span> <span class="op">$</span> showXml <span class="dt">False</span> ecomm</span></code></pre></div>
+<p>Writing <code>HTypeable</code> and <code>XmlContent</code> could be seen as boilerplate, and you can circumvent it by re-implementing <code>readXml</code> and <code>showXml</code> yourself, however I don’t recommend it. By getting rid of <code>XmlContent</code> you will lose generalizability of reading/writing. For <code>ECommerceConnect</code> reading without <code>XmlContent</code> would be:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true"></a><span class="op">...</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.Parse</span> (xmlParse')</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.Posn</span> (posInNewCxt)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Text.XML.HaXml.XmlContent.Parser</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true"></a><span class="op">...</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true"></a><span class="ot">readXml' ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">ECommerceConnect</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true"></a>readXml' xml <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true"></a>   <span class="kw">let</span> (<span class="dt">Right</span> (<span class="dt">Document</span> _ _ ecc' _)) <span class="ot">=</span> xmlParse' <span class="st">&quot;./resource/err&quot;</span> xml</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true"></a>       (<span class="dt">Right</span> ecc) <span class="ot">=</span> <span class="fu">fst</span> <span class="op">$</span> runParser elementECommerceConnect [<span class="dt">CElem</span> ecc' (posInNewCxt <span class="st">&quot;./resource/err&quot;</span> <span class="dt">Nothing</span>)]</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true"></a>   <span class="kw">in</span>  ecc</span></code></pre></div>
+<p>This is error-prone and relies on implementation details of HaXml.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>The biggest weakness of generating bindings with HaXml are dependencies between XSDs, the more dependencies the worse manual intervention. There is also no way to automate the process, and you can’t predict what changes will be necessary. If you don’t have highly dependant set of XSDs and changes are not frequent then HaXml can be used for generating Haskell bindings.</p>
+    </section>
+    <nav>
+        <a href="../">back</a>
+    </nav>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+
+    </body>
+</html>
